@@ -1,20 +1,19 @@
 package main;
 
-/*
- * Hotel Booking Management System
+/**
+ * Book My Stay App
  *
- * Objective:
- * Demonstrates use of Core Java and Data Structures in a real-world booking system.
+ * This class represents the entry point of the Hotel Booking Management System.
+ * It demonstrates how a Java application starts execution and prints output.
  *
- * Key Concepts:
- * FIFO handling, room availability, prevention of double booking, OOP design.
- *
- * Outcome:
- * Understand practical usage of data structures in system design.
+ * @author Saksham
+ * @version 1.0
  */
 
-public class Main {
-    public static void main(String[] args) {
+public class UseCase1HotelBookingApp {
 
+    public static void main(String[] args) {
+        System.out.println("Welcome to Book My Stay App");
+        System.out.println("Hotel Booking System v1.0");
     }
 }
