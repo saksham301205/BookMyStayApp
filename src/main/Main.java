@@ -1,63 +1,77 @@
 package main;
 
+import java.io.*;
 import java.util.*;
 
 /**
  * Book My Stay App
  *
- * Use Case 11: Concurrent Booking Simulation (Thread Safety)
+ * Use Case 12: Data Persistence & System Recovery
  *
- * Demonstrates synchronized booking to avoid race conditions.
+ * Demonstrates serialization & deserialization for persistence.
  *
  * @author Saksham
- * @version 11.0
+ * @version 12.0
  */
 
-class BookingSystem {
-    private Map<String, Integer> inventory = new HashMap<>();
+class DataStore implements Serializable {
+    Map<String, Integer> inventory;
+    List<String> bookings;
 
-    public BookingSystem() {
-        inventory.put("Single Room", 2);
+    DataStore(Map<String, Integer> inventory, List<String> bookings) {
+        this.inventory = inventory;
+        this.bookings = bookings;
+    }
+}
+
+class PersistenceService {
+    private static final String FILE = "data.ser";
+
+    public void save(DataStore data) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE))) {
+            oos.writeObject(data);
+            System.out.println("Data saved successfully.");
+        } catch (Exception e) {
+            System.out.println("Error saving data.");
+        }
     }
 
-    public synchronized void book(String user) {
-        int available = inventory.get("Single Room");
-
-        if (available > 0) {
-            System.out.println(user + " is booking...");
-            inventory.put("Single Room", available - 1);
-            System.out.println("Booking confirmed for " + user);
-        } else {
-            System.out.println("No rooms available for " + user);
+    public DataStore load() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE))) {
+            System.out.println("Data loaded successfully.");
+            return (DataStore) ois.readObject();
+        } catch (Exception e) {
+            System.out.println("No previous data found. Starting fresh.");
+            return null;
         }
     }
 }
 
-class BookingThread extends Thread {
-    private BookingSystem system;
-    private String user;
-
-    BookingThread(BookingSystem system, String user) {
-        this.system = system;
-        this.user = user;
-    }
-
-    public void run() {
-        system.book(user);
-    }
-}
-
-public class UseCase11ConcurrentBookingSimulation {
+public class UseCase12DataPersistenceRecovery {
     public static void main(String[] args) {
 
-        BookingSystem system = new BookingSystem();
+        PersistenceService ps = new PersistenceService();
 
-        Thread t1 = new BookingThread(system, "User1");
-        Thread t2 = new BookingThread(system, "User2");
-        Thread t3 = new BookingThread(system, "User3");
+        DataStore data = ps.load();
 
-        t1.start();
-        t2.start();
-        t3.start();
+        Map<String, Integer> inventory;
+        List<String> bookings;
+
+        if (data == null) {
+            inventory = new HashMap<>();
+            inventory.put("Single Room", 2);
+            bookings = new ArrayList<>();
+        } else {
+            inventory = data.inventory;
+            bookings = data.bookings;
+        }
+
+        bookings.add("Booking1");
+        inventory.put("Single Room", inventory.get("Single Room") - 1);
+
+        System.out.println("Current Inventory: " + inventory);
+        System.out.println("Bookings: " + bookings);
+
+        ps.save(new DataStore(inventory, bookings));
     }
 }
