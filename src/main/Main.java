@@ -5,63 +5,76 @@ import java.util.*;
 /**
  * Book My Stay App
  *
- * Use Case 9: Error Handling & Validation
+ * Use Case 10: Booking Cancellation & Inventory Rollback
  *
- * Demonstrates validation and custom exception handling.
+ * Demonstrates rollback using Stack and inventory restoration.
  *
  * @author Saksham
- * @version 9.0
+ * @version 10.0
  */
 
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
-    }
-}
-
-class RoomInventory {
+class BookingManager {
+    private Map<String, String> bookings = new HashMap<>(); // bookingId -> roomType
     private Map<String, Integer> inventory = new HashMap<>();
+    private Stack<String> rollbackStack = new Stack<>();
+    private int idCounter = 1;
 
-    public RoomInventory() {
+    public BookingManager() {
         inventory.put("Single Room", 2);
         inventory.put("Double Room", 1);
     }
 
-    public void validateRoom(String type) throws InvalidBookingException {
-        if (!inventory.containsKey(type)) {
-            throw new InvalidBookingException("Invalid room type: " + type);
+    public String book(String roomType) {
+        if (inventory.getOrDefault(roomType, 0) > 0) {
+            String bookingId = "B" + idCounter++;
+            bookings.put(bookingId, roomType);
+            inventory.put(roomType, inventory.get(roomType) - 1);
+
+            System.out.println("Booked: " + bookingId + " (" + roomType + ")");
+            return bookingId;
+        } else {
+            System.out.println("No availability for " + roomType);
+            return null;
         }
     }
 
-    public void validateAvailability(String type) throws InvalidBookingException {
-        if (inventory.get(type) <= 0) {
-            throw new InvalidBookingException("No availability for: " + type);
+    public void cancel(String bookingId) {
+        if (!bookings.containsKey(bookingId)) {
+            System.out.println("Invalid booking ID");
+            return;
         }
+
+        String roomType = bookings.get(bookingId);
+
+        rollbackStack.push(bookingId); // track rollback
+        inventory.put(roomType, inventory.get(roomType) + 1);
+        bookings.remove(bookingId);
+
+        System.out.println("Cancelled: " + bookingId + " (" + roomType + ")");
     }
 
-    public void bookRoom(String type) throws InvalidBookingException {
-        validateRoom(type);
-        validateAvailability(type);
-
-        inventory.put(type, inventory.get(type) - 1);
-        System.out.println("Booking successful for " + type);
+    public void showInventory() {
+        System.out.println("\nInventory:");
+        for (String type : inventory.keySet()) {
+            System.out.println(type + ": " + inventory.get(type));
+        }
     }
 }
 
-public class UseCase9ErrorHandlingValidation {
+public class UseCase10BookingCancellation {
     public static void main(String[] args) {
 
-        RoomInventory inventory = new RoomInventory();
+        BookingManager manager = new BookingManager();
 
-        try {
-            inventory.bookRoom("Single Room");
-            inventory.bookRoom("Suite Room"); // invalid
-            inventory.bookRoom("Double Room");
-            inventory.bookRoom("Double Room"); // no availability
-        } catch (InvalidBookingException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        String b1 = manager.book("Single Room");
+        String b2 = manager.book("Double Room");
 
-        System.out.println("Application continues safely...");
+        manager.showInventory();
+
+        manager.cancel(b1);
+
+        manager.showInventory();
+
+        manager.cancel("B999"); // invalid
     }
 }
